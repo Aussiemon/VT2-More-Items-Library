@@ -350,23 +350,32 @@ end
 -- #################### Hooks ###############################
 
 -- At every call to local backend, insert loaded mod items
-mod:hook(PlayFabMirror, "get_all_inventory_items", function (func, ...)
-	
-	-- Original function
-	local backend_items = func(...)
-	
-	-- Insert backend mod items
-	for mod_backend_id, mod_backend_item in pairs(backend_mod_items) do
-		if mod_backend_item == false then
-			backend_mod_items[mod_backend_id] = nil
-			backend_items[mod_backend_id] = nil
-		else
-			backend_items[mod_backend_id] = mod_backend_item
-		end
-	end
-	
-	-- Return backend items with mod additions
-	return backend_items
+--
+-- Zero: Since it doesn't seem like we can reference PlayFabMirror directly, we'll run this once to get to its class so we can hook its functions
+--          If it works, it works
+mod:hook(BackendInterfaceItemPlayfab, "init", function (func, self, backend_mirror)
+
+    -- Zero: From here on it's pretty much Aussiemon's original function
+    mod:hook(backend_mirror, "get_all_inventory_items", function (func, ...)
+        
+        -- Original function
+        local backend_items = func(...)
+        
+        -- Insert backend mod items
+        for mod_backend_id, mod_backend_item in pairs(backend_mod_items) do
+            if mod_backend_item == false then
+                backend_mod_items[mod_backend_id] = nil
+                backend_items[mod_backend_id] = nil
+            else
+                backend_items[mod_backend_id] = mod_backend_item
+            end
+        end
+        
+        -- Return backend items with mod additions
+        return backend_items
+    end)
+    
+    return func(self, backend_mirror)
 end)
 
 
