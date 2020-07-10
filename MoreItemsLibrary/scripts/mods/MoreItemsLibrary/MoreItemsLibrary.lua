@@ -79,6 +79,7 @@ local mod = get_mod("MoreItemsLibrary")
 
 -- Private Variables --
 
+local general_data = mod:persistent_table("more_items_general_data")
 local backend_mod_items = mod:persistent_table("backend_mod_items")
 local new_masterlist_entries = mod:persistent_table("new_masterlist_entries")
 
@@ -90,6 +91,8 @@ local default_purchase_date = templates.default_purchase_date
 local default_remaining_uses = templates.default_remaining_uses
 local default_unit_price = templates.default_unit_price
 local backend_templates = templates.backend_templates
+
+local backend_mirror_hooked = false
 
 local echo_header = "[More Items Library]: "
 
@@ -158,6 +161,38 @@ local refresh_modded_items = function()
 	
 	if backend_item_interface then
 		backend_item_interface:make_dirty()
+	end
+end
+
+-- Hooks the backend mirror instance stored at startup
+
+local hook_backend_mirror = function()
+	if backend_mirror_hooked then return end
+	
+	if general_data["backend_mirror_persisted"] then
+		local backend_mirror = mod:persistent_table("backend_mirror_more_items")
+		
+		if backend_mirror and backend_mirror.get_all_inventory_items then
+			mod:hook(backend_mirror, "get_all_inventory_items", function (func, ...)
+				
+				-- Original function
+				local backend_items = func(...)
+				
+				-- Insert backend mod items
+				for mod_backend_id, mod_backend_item in pairs(backend_mod_items) do
+					if mod_backend_item == false then
+						backend_mod_items[mod_backend_id] = nil
+						backend_items[mod_backend_id] = nil
+					else
+						backend_items[mod_backend_id] = mod_backend_item
+					end
+				end
+				
+				-- Return backend items with mod additions
+				return backend_items
+			end)
+			backend_mirror_hooked = true
+		end
 	end
 end
 
@@ -354,26 +389,8 @@ end
 -- Zero: Since it doesn't seem like we can reference PlayFabMirror directly, we'll run this once to get to its class so we can hook its functions
 --          If it works, it works
 mod:hook(BackendInterfaceItemPlayfab, "init", function (func, self, backend_mirror)
-
-    -- Zero: From here on it's pretty much Aussiemon's original function
-    mod:hook(backend_mirror, "get_all_inventory_items", function (func, ...)
-        
-        -- Original function
-        local backend_items = func(...)
-        
-        -- Insert backend mod items
-        for mod_backend_id, mod_backend_item in pairs(backend_mod_items) do
-            if mod_backend_item == false then
-                backend_mod_items[mod_backend_id] = nil
-                backend_items[mod_backend_id] = nil
-            else
-                backend_items[mod_backend_id] = mod_backend_item
-            end
-        end
-        
-        -- Return backend items with mod additions
-        return backend_items
-    end)
+	mod:persistent_table("backend_mirror_more_items", backend_mirror)
+	general_data["backend_mirror_persisted"] = true
     
     return func(self, backend_mirror)
 end)
@@ -381,6 +398,14 @@ end)
 
 -- ##########################################################
 -- ################### Callback #############################
+
+mod.on_game_state_changed = function()
+	hook_backend_mirror()
+end
+
+mod.on_all_mods_loaded = function()
+	hook_backend_mirror()
+end
 
 -- ##########################################################
 -- ################### Script ###############################
