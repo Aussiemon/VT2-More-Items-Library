@@ -391,6 +391,9 @@ end
 mod:hook(BackendInterfaceItemPlayfab, "init", function (func, self, backend_mirror)
 	mod:persistent_table("backend_mirror_more_items", backend_mirror)
 	general_data["backend_mirror_persisted"] = true
+	
+	-- Hook the mirror now that we have it persisted
+	hook_backend_mirror()
     
     return func(self, backend_mirror)
 end)
