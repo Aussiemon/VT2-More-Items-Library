@@ -343,6 +343,10 @@ mod.add_mod_items_to_local_backend = function(self, items, mod_name)
 			backend_item.CustomData.rarity = mod_item_rarity
 			backend_item.rarity = mod_item_rarity
 			
+			-- All mod items must ignore skin ownership checks
+			backend_item.bypass_skin_ownership_check = true
+			backend_item.skin = mod_data.skin
+			
 			-- Add mod item by backend_id, overwriting if already in use
 			add_modded_item(backend_item.backend_id, backend_item)
 		until true
