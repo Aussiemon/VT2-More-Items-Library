@@ -3,7 +3,7 @@
 	
 	-----
  
-	Copyright 2019 Aussiemon
+	Copyright 2022 Aussiemon
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -180,11 +180,18 @@ local hook_backend_mirror = function()
 				
 				-- Insert backend mod items
 				for mod_backend_id, mod_backend_item in pairs(backend_mod_items) do
-					if mod_backend_item == false then
+					if not mod_backend_item then
 						backend_mod_items[mod_backend_id] = nil
 						backend_items[mod_backend_id] = nil
 					else
 						backend_items[mod_backend_id] = mod_backend_item
+						local item_data = mod_backend_item.data
+						local item_type = item_data and item_data.item_type
+						
+						-- Philip: The game now wants cosmetic items to be put in the backend mirror's _unlocked_cosmetics member variable.
+						if (item_data and item_type and mod.cosmetic_item_types[item_type]) then
+							backend_mirror._unlocked_cosmetics[mod_backend_item.data.name] = mod_backend_id
+						end
 					end
 				end
 				

@@ -1,5 +1,6 @@
 **/*.bak
 **/*.bat
+**/*.config
 **/*.jpeg
 **/*.jpg
 **/*.old
